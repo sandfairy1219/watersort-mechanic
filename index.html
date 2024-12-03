@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Sort Game</title>
+    <style>
+        .difficulty-button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .selected {
+            background-color: lightblue;
+            animation: grow 0.3s forwards;
+        }
+        .bottle {
+            width: 50px;
+            height: 200px;
+            border: 1px solid black;
+            margin: 10px;
+            display: inline-block;
+            vertical-align: bottom;
+            position: relative;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .bottle.selected {
+            transform: scale(1.1);
+        }
+        .color {
+            width: 100%;
+            height: 25%;
+            position: absolute;
+            bottom: 0;
+            border-radius: 10px;
+        }
+        #game-board {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 20px;
+        }
+        #clear-message {
+            display: none;
+            font-size: 24px;
+            color: green;
+        }
+        @keyframes grow {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button class="difficulty-button" id="easy">Easy</button>
+        <button class="difficulty-button" id="medium">Medium</button>
+        <button class="difficulty-button" id="hard">Hard</button>
+        <button id="start">Start</button>
+    </div>
+    <div id="game-board"></div>
+    <div id="clear-message">Clear!</div>
+
+    <script>
+        const difficulties = {
+            easy: { colors: ['red', 'blue', 'green', 'yellow'], bottles: 4, emptyBottles: 2 },
+            medium: { colors: ['red', 'blue', 'green', 'yellow', 'purple', 'orange'], bottles: 6, emptyBottles: 2 },
+            hard: { colors: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'lightblue', 'pink'], bottles: 8, emptyBottles: 3 }
+        };
+
+        let selectedDifficulty = null;
+        let selectedBottle = null;
+
+        document.querySelectorAll('.difficulty-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.difficulty-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.toggle('selected');
+                selectedDifficulty = button.id;
+            });
+        });
+
+        document.getElementById('start').addEventListener('click', () => {
+            if (!selectedDifficulty) {
+                alert('Please select a difficulty level.');
+                return;
+            }
+            startGame(difficulties[selectedDifficulty]);
+        });
+
+        function startGame(difficulty) {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            const colors = [...difficulty.colors];
+            const bottles = [];
+
+            // Create an array with each color appearing exactly 4 times
+            const colorPool = [];
+            colors.forEach(color => {
+                for (let i = 0; i < 4; i++) {
+                    colorPool.push(color);
+                }
+            });
+
+            // Shuffle the color pool
+            for (let i = colorPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [colorPool[i], colorPool[j]] = [colorPool[j], colorPool[i]];
+            }
+
+            // Distribute colors into bottles
+            for (let i = 0; i < difficulty.bottles; i++) {
+                const bottleColors = colorPool.splice(0, 4);
+                bottles.push(bottleColors);
+            }
+
+            // Add empty bottles
+            for (let i = 0; i < difficulty.emptyBottles; i++) {
+                bottles.push([]);
+            }
+
+            bottles.forEach(bottleColors => {
+                const bottle = document.createElement('div');
+                bottle.classList.add('bottle');
+                bottle.addEventListener('click', () => selectBottle(bottle, bottleColors));
+                bottleColors.forEach((color, index) => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.classList.add('color');
+                    colorDiv.style.backgroundColor = color;
+                    colorDiv.style.bottom = `${index * 25}%`;
+                    bottle.appendChild(colorDiv);
+                });
+                gameBoard.appendChild(bottle);
+            });
+
+            checkGameClear();
+        }
+
+        function selectBottle(bottle, bottleColors) {
+            if (selectedBottle) {
+                if (selectedBottle === bottle) {
+                    selectedBottle.classList.remove('selected');
+                    selectedBottle = null;
+                } else {
+                    moveColor(selectedBottle, bottle);
+                    selectedBottle.classList.remove('selected');
+                    selectedBottle = null;
+                }
+            } else {
+                selectedBottle = bottle;
+                bottle.classList.add('selected');
+            }
+        }
+
+        function moveColor(fromBottle, toBottle) {
+            const fromColors = Array.from(fromBottle.children).map(child => child.style.backgroundColor);
+            const toColors = Array.from(toBottle.children).map(child => child.style.backgroundColor);
+
+            if (fromColors.length === 0 || toColors.length >= 4) return;
+
+            const colorToMove = fromColors[fromColors.length - 1];
+
+            if (toColors.length === 0 || toColors[toColors.length - 1] === colorToMove) {
+                const colorDiv = fromBottle.removeChild(fromBottle.lastChild);
+                toBottle.appendChild(colorDiv);
+                colorDiv.style.bottom = `${toColors.length * 25}%`;
+            }
+        }
+
+        function checkGameClear() {
+            // Implement game clear logic here
+            // If game is cleared, display the clear message
+            document.getElementById('clear-message').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
